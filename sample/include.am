@@ -11,6 +11,8 @@ SAMPLES = \
 	sample/http-server				\
 	sample/http-connect				\
 	sample/signal-test				\
+	sample/eping					\
+	sample/sping					\
 	sample/time-test
 
 if OPENSSL
@@ -51,3 +53,7 @@ sample_http_server_SOURCES = sample/http-server.c
 sample_http_server_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
 sample_http_connect_SOURCES = sample/http-connect.c
 sample_http_connect_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
+sample_eping_SOURCES = sample/eping.c
+sample_eping_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
+sample_sping_SOURCES = sample/sping.c
+sample_sping_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la

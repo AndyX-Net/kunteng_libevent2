@@ -159,7 +159,7 @@ endif
 
 else
 
-SYS_LIBS =
+SYS_LIBS = -lm
 SYS_SRC =
 SYS_INCLUDES =
 
@@ -218,6 +218,7 @@ EXTRAS_SRC =					\
 	evdns.c					\
 	event_tagging.c				\
 	evrpc.c					\
+	evping.c				\
 	http.c
 
 if BUILD_WITH_NO_UNDEFINED
@@ -290,6 +291,7 @@ EVENT1_HDRS = \
 	include/event.h \
 	include/evhttp.h \
 	include/evrpc.h \
+	include/evping.h \
 	include/evutil.h
 
 if INSTALL_LIBEVENT
