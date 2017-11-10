@@ -110,7 +110,7 @@ struct event_callback {
 	ev_uint8_t evcb_pri;	/* smaller numbers are higher priority */
 	ev_uint8_t evcb_closure;
 	/* allows us to adopt for different types of events */
-        union {
+    union {
 		void (*evcb_callback)(evutil_socket_t, short, void *);
 		void (*evcb_selfcb)(struct event_callback *, void *);
 		void (*evcb_evfinalize)(struct event *, void *);

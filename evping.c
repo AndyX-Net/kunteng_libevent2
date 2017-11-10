@@ -368,7 +368,7 @@ static void ready_callback (int unused, const short event, void * arg)
 	struct evping_base *base = arg;
 
 	int nrecv;
-	u_char packet[MAX_DATA_SIZE];
+	u_char packet[MAX_DATA_SIZE] = {0};
 	struct sockaddr_in remote;                  /* responding internet address */
 	socklen_t slen = sizeof(struct sockaddr);
 
@@ -531,6 +531,70 @@ evping_base_free(struct evping_base *base, int fail_requests)
 	mm_free(base);
 }
 
+static void
+evping_base_host_delete(struct evhost *host)
+{
+	if (!host)
+		return;
+
+	if (host->name) mm_free(host->name);
+	if (host->fqname) mm_free(host->fqname);
+	if (host->ipname) mm_free(host->ipname);
+
+	evtimer_del(&host->ping_timer);
+	evtimer_del(&host->noreply_timer);
+	
+	mm_free(host);
+}
+
+void
+evping_base_host_delete_by_ipname(struct evping_base *base, const char *ip)
+{
+	EVPING_LOCK(base);
+
+	struct evhost *host, *head = base->host_head;
+	
+	while(head != NULL) {
+		if (strcmp(head->ipname, ip) == 0) {
+			host = head;
+			if (host->prev == NULL) { // it's head
+				base->host_head = host->next;
+				if (host->next)
+					base->host_head->prev = NULL;
+			} else if (host->next == NULL){ // its end
+				host->prev->next = NULL;
+			} else {
+				host->next->prev = host->prev;
+				host->prev->next = host->next;
+			}
+			evping_base_host_delete(host);
+			break;
+		}
+		head = head->next;
+	}
+	
+	EVPING_UNLOCK(base);
+}
+
+/* clean all host*/
+void
+evping_base_host_clean_all(struct evping_base *base)
+{
+	EVPING_LOCK(base);
+	
+	struct evhost *host, *head = base->host_head;
+
+	while(head != NULL) {
+		host = head;
+		head = host->next;
+		if (head)
+			head->prev = NULL; 
+		evping_base_host_delete(host);
+	}
+	
+	EVPING_UNLOCK(base);
+}
+
 
 /* exported function */
 int
@@ -566,16 +630,13 @@ evping_base_host_add(struct evping_base *base, char * ip)
 	evtimer_assign(&host->noreply_timer, base->event_base, noreply_callback, host);
 
 	/* insert this host into the list of them */
+	host->next = host->prev = NULL;
 	if (!base->host_head) {
-		host->next = host->prev = host;
 	  	base->host_head = host;
 	} else {
-	  	host->next = base->host_head->next;
-	  	host->prev = base->host_head;
-	  	base->host_head->next = host;
-	  	if (base->host_head->prev == base->host_head) {
-	    	base->host_head->prev = host;
-	  	}
+	  	host->next = base->host_head;
+	  	host->next->prev = host;
+		base->host_head = host;
 	}
 
 	base->argc++;
@@ -604,7 +665,7 @@ evping_ping(struct evping_base *base, evping_callback_type callback, void *ptr)
 		evtimer_add(&host->ping_timer, &asap);
 
 		host = host->next;
-	} while (host != base->host_head);
+	} while (host != NULL);
 done:
 	EVPING_UNLOCK(base);
 }
@@ -619,14 +680,12 @@ evping_base_count_hosts(struct evping_base *base)
 
 	EVPING_LOCK(base);
 	host = base->host_head;
-	if (!host)
-		goto done;
-	do {
+	while(host != NULL) {
 		++n;
 		host = host->next;
-	} while (host != base->host_head);
-done:
+	}
 	EVPING_UNLOCK(base);
+
 	return n;
 }
 
@@ -664,7 +723,7 @@ evping_stats(struct evping_base *base)
 		  printf ("\n");
 
 		host = host->next;
-	} while (host != base->host_head);
+	} while (host != NULL);
 done:
 	EVPING_UNLOCK(base);
 }

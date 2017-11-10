@@ -60,15 +60,22 @@ static void on_signal (int sig)
 static void callback (int result, int bytes, char * fqname, char * dotname,
 		      int seq, int ttl, struct timeval * elapsed, void * arg)
 {
-  switch (result)
+	struct evping_base *pbase = arg;
+	
+	switch (result)
     {
     case PING_ERR_NONE:
-      printf ("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%.3f ms\n",
-	      bytes, fqname, dotname, seq, ttl, (float) tvtousecs (elapsed) / 1000);
+      	printf ("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%.3f ms\n",
+	      	bytes, fqname, dotname, seq, ttl, (float) tvtousecs (elapsed) / 1000);
+		if (pbase)
+			evping_base_host_delete_by_ipname(pbase, dotname);
+
       break;
 
     case PING_ERR_TIMEOUT:
-      printf ("time out with %s (%s): icmp_seq=%d time=%3.f ms\n", fqname, dotname, seq, (float) tvtousecs (elapsed) / 1000);
+      	printf ("time out with %s (%s): icmp_seq=%d time=%3.f ms\n", fqname, dotname, seq, (float) tvtousecs (elapsed) / 1000);
+		if (pbase)
+			evping_base_host_delete_by_ipname(pbase, dotname);
       break;
 
     default:
@@ -122,7 +129,8 @@ int main (int argc, char * argv [])
 	  printf ("#%d host%s being pinged\n", evping_base_count_hosts (ping), n > 1 ? "s" : "");
 
 	  /* Begin sending ICMP ECHO_REQUEST to network hosts */
-	  evping_ping (ping, callback, NULL);
+	  evping_ping (ping, callback, ping);
+
 
 	  /* Event dispatching loop */
 	  event_base_dispatch (base);

@@ -99,6 +99,15 @@ void evping_base_free(struct evping_base *base, int fail_requests);
  */
 int evping_base_host_add(struct evping_base *base, char *ip);
 
+/**
+  Delete host by its ip
+ */
+void evping_base_host_delete_by_ipname(struct evping_base *base, const char *ip);
+
+/**
+ Clean all host
+ */
+void evping_base_host_clean_all(struct evping_base *base);
 
 /**
   Send ICMP ECHO_REQUEST to network hosts.
